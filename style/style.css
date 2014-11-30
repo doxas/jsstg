@@ -12,6 +12,7 @@ html, body {
 	font-size: 9pt;
 	width: 100%;
 	height: auto;
+	overflow: hidden;
 }
 
 a, a:visited {
@@ -26,8 +27,85 @@ a:hover, a:active {
 
 strong {
 	color: crimson;
-	font-size: -2;
 	font-style: normal;
 	text-shadow: 0px 0px 5px white;
+}
+
+h1 {
+	font-family: 'Geo','consolas','Monaco',monospace;
+	font-size: 80px;
+	font-style: normal;
+	font-weight: bold;
+	margin: 0px 0px 0px 50px;
+}
+
+h2, h3 {
+	font-family: 'Geo','consolas','Monaco',monospace;
+	font-style: normal;
+	font-weight: bold;
+}
+
+h2 {
+	border-bottom: 5px solid rgba(255, 255, 255, 0.5);
+	font-size: 36px;
+	margin: 20px;
+}
+
+h3 {
+	border-left: 12px solid rgba(255, 255, 255, 0.5);
+	font-size: 24px;
+	margin: 20px 30px;
+	padding: 0px 0px 0px 5px;
+}
+
+#wrap {
+	width: 100%;
+	height: 100%;
+}
+
+#header {
+	background-color: rgba(255, 0, 0, 0.5);
+	line-height: 1.5;
+	width: 100%;
+	position: fixed;
+	top: 0px;
+}
+
+#content {
+	padding: 150px 0px;
+	box-sizing: border-box;
+}
+
+#footer {
+	background-color: rgba(0, 0, 255, 0.5);
+	line-height: 4;
+	text-align: right;
+	width: 100%;
+	position: fixed;
+	bottom: 0px;
+}
+
+#footer p {
+	margin: 0px 30px 0px 0px;
+}
+
+#canvas {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: -1;
+}
+
+.pages {
+	background-color: rgba(0, 255, 0, 0.75);
+	color: rgba(255, 255, 255, 0.5);
+	height: 300px;
+	overflow: auto;
+}
+
+.pages p {
+	margin: 10px 40px;
 }
 
