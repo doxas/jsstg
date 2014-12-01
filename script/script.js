@@ -24,6 +24,6 @@ window.onload = function(){
 window.onresize = function(){
 	for(i = 0, l = pages.length; i < l; i++){
 		pages[i].style.width = Math.max(cWidth - 100, 100) + 'px';
-		pagess[i].style.height = Math.max(cHeight - 300, 100) + 'px';
+		pages[i].style.height = Math.max(cHeight - 300, 100) + 'px';
 	}
 };
