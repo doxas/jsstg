@@ -12,36 +12,29 @@ function render(){
 	attLocation[0] = gl.getAttribLocation(prg, 'position');
 	attLocation[1] = gl.getAttribLocation(prg, 'normal');
 	attLocation[2] = gl.getAttribLocation(prg, 'color');
-	attLocation[3] = gl.getAttribLocation(prg, 'texCoord');
 	var attStride = [];
 	attStride[0] = 3;
 	attStride[1] = 3;
 	attStride[2] = 4;
-	attStride[3] = 2;
 	
 	var torusData = torus(64, 64, 0.25, 0.75);
 	var vPosition = torusData.p;
 	var vNormal   = torusData.n;
 	var vColor    = torusData.c;
-	var vTexCoord = torusData.t;
 	var index     = torusData.i;
 	
 	var attVBO = [];
 	attVBO[0] = create_vbo(vPosition);
 	attVBO[1] = create_vbo(vNormal);
 	attVBO[2] = create_vbo(vColor);
-	attVBO[3] = create_vbo(vTexCoord);
 	var ibo = create_ibo(index);
 	
 	var uniLocation = [];
-	uniLocation[0] = gl.getUniformLocation(prg, 'mvpMatrix');
-	uniLocation[1] = gl.getUniformLocation(prg, 'invMatrix');
-	uniLocation[2] = gl.getUniformLocation(prg, 'lightPosition');
-	uniLocation[3] = gl.getUniformLocation(prg, 'ambientColor');
-	uniLocation[4] = gl.getUniformLocation(prg, 'eyePosition');
-	uniLocation[5] = gl.getUniformLocation(prg, 'centerPoint');
-	uniLocation[6] = gl.getUniformLocation(prg, 'mMatrix');
-	uniLocation[7] = gl.getUniformLocation(prg, 'textureUnit');
+	uniLocation[0] = gl.getUniformLocation(prg, 'mMatrix');
+	uniLocation[1] = gl.getUniformLocation(prg, 'mvpMatrix');
+	uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
+	uniLocation[3] = gl.getUniformLocation(prg, 'lightDirection');
+	uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
 	
 	var m = new matIV();
 	var mMatrix = m.identity(m.create());
