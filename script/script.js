@@ -62,7 +62,7 @@ function render(){
 	gl.clearDepth(1.0);
 	
 	var count = 0;
-	var lightPosition = [1.0, 1.0, 1.0];
+	var lightPosition = [1.0, 5.0, 1.0];
 	var eyePosition = [0.0, 0.0, 5.0];
 	var centerPoint = [0.0, 0.0, 0.0];
 	var upDirection = [0.0, 1.0, 0.0];
@@ -113,7 +113,7 @@ function render(){
 		set_attribute(attSphereVBO, attLocation, attStride, sphereIbo);
 		
 		m.identity(mMatrix);
-//		m.translate(mMatrix, [50.0 - (count % 100), 0.0, 15.0], mMatrix);
+		m.translate(mMatrix, [10.0 - ((count / 10) % 20), 0.0, -25.0], mMatrix);
 		m.rotate(mMatrix, Math.PI / 2, [0.0, 0.0, 1.0], mMatrix);
 		m.multiply(vpMatrix, mMatrix, mvpMatrix);
 		m.inverse(mMatrix, invMatrix);
