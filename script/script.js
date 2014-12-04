@@ -3,8 +3,8 @@ var cWidth, cHeight, cAspect;
 
 function render(){
 	gl = c.getContext('webgl');
-	var vs = '';
-	var fs = '';
+	var vs = document.getElementById('vs').textContent;
+	var fs = document.getElementById('fs').textContent;
 	var vShader = create_shader(vs, gl.VERTEX_SHADER);
 	var fShader = create_shader(fs, gl.FRAGMENT_SHADER);
 	var prg = create_program(vShader, fShader);
@@ -46,19 +46,15 @@ function render(){
 	
 	gl.depthFunc(gl.LEQUAL);
 	gl.enable(gl.CULL_FACE);
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(0.0, 0.7, 0.7, 1.0);
 	gl.clearDepth(1.0);
 	
 	var count = 0;
 	var lightPosition = [1.0, 1.0, 1.0];
-	var ambientColor = [0.1, 0.1, 0.1];
-	var eyePosition = [0.0, 0.0, 10.0];
+	var eyePosition = [0.0, 0.0, 5.0];
 	var centerPoint = [0.0, 0.0, 0.0];
+	var upDirection = [0.0, 1.0, 0.0];
 	
-	
-	m.lookAt(eyePosition, centerPoint, [0.0, 1.0, 0.0], vMatrix);
-	m.perspective(45, c.width / c.height, 0.1, 20.0, pMatrix);
-	m.multiply(pMatrix, vMatrix, vpMatrix);
 	
 //	create_texture('lenna.jpg', 0);
 	run = true;
@@ -71,29 +67,33 @@ function render(){
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		
-		gl.viewport(0, 0, c.width, c.height);
+		gl.viewport(0, 0, cWidth, cHeight);
 		
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, WE.textures[0]);
-		gl.activeTexture(gl.TEXTURE1);
-		gl.bindTexture(gl.TEXTURE_2D, WE.textures[1]);
+//		gl.activeTexture(gl.TEXTURE0);
+//		gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+//		gl.activeTexture(gl.TEXTURE1);
+//		gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+		
+		set_attribute(attVBO, attLocation, attStride);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+		
+		m.lookAt(eyePosition, centerPoint, upDirection, vMatrix);
+		m.perspective(45, cWidth / cHeight, 0.1, 10.0, pMatrix);
+		m.multiply(pMatrix, vMatrix, vpMatrix);
 		
 		m.identity(mMatrix);
-		m.rotate(mMatrix, rad, [0.0, 1.0, 0.0], mMatrix);
-		m.translate(mMatrix, [0.0, 0.0, 3.0], mMatrix);
-		m.rotate(mMatrix, rad, [0.0, 1.0, 0.0], mMatrix);
+		m.rotate(mMatrix, rad, [1.0, 1.0, 0.0], mMatrix);
+		m.rotate(mMatrix, Math.PI / 2, [1.0, 0.0, 0.0], mMatrix);
 		m.multiply(vpMatrix, mMatrix, mvpMatrix);
 		m.inverse(mMatrix, invMatrix);
 		
-		gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
-		gl.uniformMatrix4fv(uniLocation[1], false, invMatrix);
-		gl.uniform3fv(uniLocation[2], lightPosition);
-		gl.uniform3fv(uniLocation[3], ambientColor);
+		gl.uniformMatrix4fv(uniLocation[0], false, mMatrix);
+		gl.uniformMatrix4fv(uniLocation[1], false, mvpMatrix);
+		gl.uniformMatrix4fv(uniLocation[2], false, invMatrix);
+		gl.uniform3fv(uniLocation[3], lightPosition);
 		gl.uniform3fv(uniLocation[4], eyePosition);
-		gl.uniform3fv(uniLocation[5], centerPoint);
-		gl.uniformMatrix4fv(uniLocation[6], false, mMatrix);
-		gl.uniform1i(uniLocation[7], 0);
-		gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+		
+		gl.drawElements(gl.TRIANGLES, torusData.i.length, gl.UNSIGNED_SHORT, 0);
 		
 		gl.flush();
 		if(run){requestAnimationFrame(arguments.callee);}
@@ -117,10 +117,15 @@ window.onload = function(){
 			e.childNodes[i].style.height = Math.max(cHeight - 300, 100) + 'px';
 		}
 	}
-//	gl = c.getContext('webgl');
+	window.addEventListener('keydown', function(eve){run = (eve.keyCode !== 27);}, true);
+	render();
 };
 
 window.onresize = function(){
+	cWidth = window.innerWidth;
+	cHeight = window.innerHeight;
+	c.width = cWidth;
+	c.height = cHeight;
 	for(i = 0, l = pages.length; i < l; i++){
 		pages[i].style.width = Math.max(cWidth - 100, 100) + 'px';
 		pages[i].style.height = Math.max(cHeight - 300, 100) + 'px';
