@@ -29,7 +29,7 @@ function render(){
 	attTorusVBO[2] = create_vbo(vColor);
 	var torusIbo = create_ibo(index);
 	
-	var sphereData = sphere(24, 24, 1.0);
+	var sphereData = sphere(24, 24, 1.0, [1.0, 1.0, 1.0, 1.0]);
 	vPosition = sphereData.p;
 	vNormal   = sphereData.n;
 	vColor    = sphereData.c;
@@ -56,6 +56,7 @@ function render(){
 	var mvpMatrix = m.identity(m.create());
 	var invMatrix = m.identity(m.create());
 	
+	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 	gl.enable(gl.CULL_FACE);
 	gl.clearColor(0.0, 0.7, 0.7, 1.0);
@@ -68,12 +69,10 @@ function render(){
 	var upDirection = [0.0, 1.0, 0.0];
 	
 	
-//	create_texture('lenna.jpg', 0);
 	run = true;
 	
 	(function(){
 		count++;
-		gl.enable(gl.DEPTH_TEST);
 		
 		var rad = (count % 360) * Math.PI / 180;
 		
@@ -83,15 +82,11 @@ function render(){
 		gl.uniform3fv(uniLocation[3], lightPosition);
 		gl.uniform3fv(uniLocation[4], eyePosition);
 		
-//		gl.activeTexture(gl.TEXTURE0);
-//		gl.bindTexture(gl.TEXTURE_2D, textures[0]);
-//		gl.activeTexture(gl.TEXTURE1);
-//		gl.bindTexture(gl.TEXTURE_2D, textures[1]);
-		
 		m.lookAt(eyePosition, centerPoint, upDirection, vMatrix);
-		m.perspective(45, cWidth / cHeight, 0.1, 100.0, pMatrix);
+		m.perspective(45, cAspect, 0.1, 50.0, pMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
 		
+		// torus
 		set_attribute(attTorusVBO, attLocation, attStride, torusIbo);
 		
 		m.identity(mMatrix);
@@ -109,12 +104,11 @@ function render(){
 		
 		
 		
-		
+		// sphere
 		set_attribute(attSphereVBO, attLocation, attStride, sphereIbo);
 		
 		m.identity(mMatrix);
 		m.translate(mMatrix, [10.0 - ((count / 10) % 20), 0.0, -25.0], mMatrix);
-		m.rotate(mMatrix, Math.PI / 2, [0.0, 0.0, 1.0], mMatrix);
 		m.multiply(vpMatrix, mMatrix, mvpMatrix);
 		m.inverse(mMatrix, invMatrix);
 		
@@ -131,6 +125,88 @@ function render(){
 		gl.flush();
 		if(run){requestAnimationFrame(arguments.callee);}
 	}());
+	
+	var viper = {
+		init: function(){
+			return;
+		},
+		move: function(){
+			return;
+		}
+	};
+	
+	var cloud = {
+		init: function(){
+			return;
+		},
+		move: function(){
+			return;
+		}
+	};
+	
+	function create_shader(source, type){
+		var shader;
+		shader = gl.createShader(type);
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+		if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
+			return shader;
+		}else{
+			alert(gl.getShaderInfoLog(shader));
+			return null;
+		}
+	}
+	
+	function create_program(vs, fs){
+		var program = gl.createProgram();
+		gl.attachShader(program, vs);
+		gl.attachShader(program, fs);
+		gl.linkProgram(program);
+		if(gl.getProgramParameter(program, gl.LINK_STATUS)){
+			gl.useProgram(program);
+			return program;
+		}else{
+			alert(gl.getProgramInfoLog(program));
+		}
+	}
+	
+	function create_vbo(data){
+		var vbo = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		return vbo;
+	}
+	
+	function set_attribute(vbo, attL, attS, ibo){
+		for(var i in vbo){
+			gl.bindBuffer(gl.ARRAY_BUFFER, vbo[i]);
+			gl.enableVertexAttribArray(attL[i]);
+			gl.vertexAttribPointer(attL[i], attS[i], gl.FLOAT, false, 0, 0);
+		}
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+	}
+	
+	function create_ibo(data){
+		var ibo = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(data), gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+		return ibo;
+	}
+	
+	function create_texture(source, number){
+		var img = new Image();
+		img.onload = function(){
+			var tex = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+			gl.generateMipmap(gl.TEXTURE_2D);
+			gl.bindTexture(gl.TEXTURE_2D, null);
+			textures[number] = tex;
+		};
+		img.src = source;
+	}
 }
 
 window.onload = function(){
@@ -157,6 +233,7 @@ window.onload = function(){
 window.onresize = function(){
 	cWidth = window.innerWidth;
 	cHeight = window.innerHeight;
+	cAspect = cWidth / cHeight;
 	c.width = cWidth;
 	c.height = cHeight;
 	for(i = 0, l = pages.length; i < l; i++){
@@ -165,68 +242,5 @@ window.onresize = function(){
 	}
 };
 
-function create_shader(source, type){
-	var shader;
-	shader = gl.createShader(type);
-	gl.shaderSource(shader, source);
-	gl.compileShader(shader);
-	if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-		return shader;
-	}else{
-		alert(gl.getShaderInfoLog(shader));
-		return null;
-	}
-}
-
-function create_program(vs, fs){
-	var program = gl.createProgram();
-	gl.attachShader(program, vs);
-	gl.attachShader(program, fs);
-	gl.linkProgram(program);
-	if(gl.getProgramParameter(program, gl.LINK_STATUS)){
-		gl.useProgram(program);
-		return program;
-	}else{
-		alert(gl.getProgramInfoLog(program));
-	}
-}
-
-function create_vbo(data){
-	var vbo = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
-	return vbo;
-}
-
-function set_attribute(vbo, attL, attS, ibo){
-	for(var i in vbo){
-		gl.bindBuffer(gl.ARRAY_BUFFER, vbo[i]);
-		gl.enableVertexAttribArray(attL[i]);
-		gl.vertexAttribPointer(attL[i], attS[i], gl.FLOAT, false, 0, 0);
-	}
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-}
-
-function create_ibo(data){
-	var ibo = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(data), gl.STATIC_DRAW);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-	return ibo;
-}
-
-function create_texture(source, number){
-	var img = new Image();
-	img.onload = function(){
-		var tex = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, tex);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D, null);
-		textures[number] = tex;
-	};
-	img.src = source;
-}
 
 
