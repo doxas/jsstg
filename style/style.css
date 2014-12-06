@@ -6,13 +6,16 @@
 }
 
 html, body {
-/*	background-color: #111; */
 	color: #eee;
 	font-family: 'Lucida Grande','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
 	font-size: 9pt;
 	width: 100%;
 	height: auto;
 	overflow: hidden;
+}
+
+html {
+	background-color: #00b3b3;
 }
 
 a, a:visited {
@@ -110,6 +113,11 @@ h3 {
 	padding: 0px 10px;
 	display: block;
 	float: left;
+}
+
+#loading {
+	text-align: center;
+	margin: 50px auto 0px;
 }
 
 .pages {

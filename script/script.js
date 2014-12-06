@@ -1,4 +1,4 @@
-var c, gl, run, textures, pages;
+var c, gl, ax, run, models, textures, pages;
 var cWidth, cHeight, cAspect;
 
 function render(){
@@ -68,10 +68,29 @@ function render(){
 	var centerPoint = [0.0, 0.0, 0.0];
 	var upDirection = [0.0, 1.0, 0.0];
 	
-	
 	run = true;
 	
-	(function(){
+	var viper = {
+		init: function(){
+			return;
+		},
+		move: function(){
+			return;
+		}
+	};
+	
+	var cloud = {
+		init: function(){
+			return;
+		},
+		move: function(){
+			return;
+		}
+	};
+	
+	animation();
+	
+	function animation(){
 		count++;
 		
 		var rad = (count % 360) * Math.PI / 180;
@@ -123,26 +142,8 @@ function render(){
 		
 		
 		gl.flush();
-		if(run){requestAnimationFrame(arguments.callee);}
-	}());
-	
-	var viper = {
-		init: function(){
-			return;
-		},
-		move: function(){
-			return;
-		}
-	};
-	
-	var cloud = {
-		init: function(){
-			return;
-		},
-		move: function(){
-			return;
-		}
-	};
+		if(run){requestAnimationFrame(animation);}
+	}
 	
 	function create_shader(source, type){
 		var shader;
@@ -210,14 +211,14 @@ function render(){
 }
 
 window.onload = function(){
-	var e;
+	var e, axTarget;
 	cWidth = window.innerWidth;
 	cHeight = window.innerHeight;
 	cAspect = cWidth / cHeight;
 	c = document.getElementById('canvas');
 	c.width = cWidth;
 	c.height = cHeight;
-	pages = []; textures = [];
+	pages = []; models = []; textures = [];
 	e = document.getElementById('content');
 	for(i = 0, l = e.childNodes.length; i < l; i++){
 		if(e.childNodes[i].className && e.childNodes[i].className.match(/pages/)){
@@ -226,21 +227,87 @@ window.onload = function(){
 			e.childNodes[i].style.height = Math.max(cHeight - 300, 100) + 'px';
 		}
 	}
+//	pages[0].className = 'pages view';
+	
 	window.addEventListener('keydown', function(eve){run = (eve.keyCode !== 27);}, true);
-	render();
-};
-
-window.onresize = function(){
-	cWidth = window.innerWidth;
-	cHeight = window.innerHeight;
-	cAspect = cWidth / cHeight;
-	c.width = cWidth;
-	c.height = cHeight;
-	for(i = 0, l = pages.length; i < l; i++){
-		pages[i].style.width = Math.max(cWidth - 100, 100) + 'px';
-		pages[i].style.height = Math.max(cHeight - 300, 100) + 'px';
+	window.addEventListener('resize', function(){
+		cWidth = window.innerWidth;
+		cHeight = window.innerHeight;
+		cAspect = cWidth / cHeight;
+		c.width = cWidth;
+		c.height = cHeight;
+		for(i = 0, l = pages.length; i < l; i++){
+			pages[i].style.width = Math.max(cWidth - 100, 100) + 'px';
+			pages[i].style.height = Math.max(cHeight - 300, 100) + 'px';
+		}
+	});
+	
+	ax = new Ajax(function(){
+		switch(axTarget){
+			case 'viper.obj':
+				models[0] = JSON.parse(objsonConvert(ax.getResponse()));
+				axTarget = 'fire.obj';
+				ax.requestGet('http://jp.wgld.org/jsstg/2015f/model/' + axTarget);
+				break;
+			case 'fire.obj':
+				models[1] = JSON.parse(objsonConvert(ax.getResponse()));
+				axTarget = 'cloud.obj';
+				ax.requestGet('http://jp.wgld.org/jsstg/2015f/model/' + axTarget);
+				break;
+			case 'cloud.obj':
+				models[2] = JSON.parse(objsonConvert(ax.getResponse()));
+				loadResource();
+				break;
+		}
+	});
+	ax.initialize();
+	axTarget = 'viper.obj';
+	ax.requestGet('http://jp.wgld.org/jsstg/2015f/model/' + axTarget);
+	
+	function loadResource(){
+		if(models.length === 3){
+			if(textures.length === 0){
+				pages[0].className = 'pages hide';
+				pages[1].className = 'pages view';
+				render();
+			}
+		}
 	}
 };
+
+function Ajax(callBackFunction){
+	var response = '';
+	this.h;
+	this.initialize = function(){
+		if(window.XMLHttpRequest){this.h = new XMLHttpRequest();}
+		if(this.h){
+			response = '';
+			return true;
+		}else{
+			return false;
+		}
+	};
+	if(callBackFunction != null){
+		this.callBack = function(){
+			if(this.readyState === 4){
+				response = this.responseText;
+				callBackFunction();
+			}
+		};
+	}else{
+		this.callBack = null;
+	}
+	this.requestGet = function(url){
+		if(!this.h){return false;}
+		this.h.abort();
+		this.h.open('get', url, true);
+		this.h.onreadystatechange = this.callBack;
+		this.h.send(null);
+	};
+	this.getResponse = function(){
+		return response;
+	};
+}
 
 
 
