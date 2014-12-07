@@ -68,6 +68,35 @@ void main(void){
 }
 	</script>
 	
+	<script id="fvs" type="x-shader/x-vertex">
+attribute vec3 position;
+attribute vec2 texCoord;
+uniform   mat4 mMatrix;
+uniform   mat4 mvpMatrix;
+varying   vec3 vPosition;
+varying   vec2 vTexCoord;
+
+void main(void){
+	vPosition   = (mMatrix * vec4(position, 1.0)).xyz;
+	vTexCoord   = vec2(texCoord.s, 1.0 - texCoord.t);
+	gl_Position = mvpMatrix * vec4(position, 1.0);
+}
+	</script>
+	
+	<script id="ffs" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform sampler2D texture;
+varying vec3 vPosition;
+varying vec2 vTexCoord;
+
+void main(void){
+	float alpha = clamp(1.0 + vPosition.z / 50.0, 0.0, 1.0);
+	vec4 smpColor = texture2D(texture, vTexCoord);
+	gl_FragColor = vec4(smpColor.rgb, alpha);
+}
+	</script>
+	
 </head>
 <body>
 	<div id="wrap">

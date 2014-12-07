@@ -3,6 +3,7 @@ var cWidth, cHeight, cAspect;
 
 function render(){
 	gl = c.getContext('webgl');
+
 	var vs = document.getElementById('vs').textContent;
 	var fs = document.getElementById('fs').textContent;
 	var vShader = create_shader(vs, gl.VERTEX_SHADER);
@@ -16,6 +17,29 @@ function render(){
 	attStride[0] = 3;
 	attStride[1] = 3;
 	attStride[2] = 2;
+	var uniLocation = [];
+	uniLocation[0] = gl.getUniformLocation(prg, 'mMatrix');
+	uniLocation[1] = gl.getUniformLocation(prg, 'mvpMatrix');
+	uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
+	uniLocation[3] = gl.getUniformLocation(prg, 'lightDirection');
+	uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
+	uniLocation[5] = gl.getUniformLocation(prg, 'texture');
+	
+	vs = document.getElementById('fvs').textContent;
+	fs = document.getElementById('ffs').textContent;
+	vShader = create_shader(vs, gl.VERTEX_SHADER);
+	fShader = create_shader(fs, gl.FRAGMENT_SHADER);
+	var fPrg = create_program(vShader, fShader);
+	var fAttLocation = [];
+	fAttLocation[0] = gl.getAttribLocation(fPrg, 'position');
+	fAttLocation[1] = gl.getAttribLocation(fPrg, 'texCoord');
+	var fAttStride = [];
+	fAttStride[0] = 3;
+	fAttStride[1] = 2;
+	var fUniLocation = [];
+	fUniLocation[0] = gl.getUniformLocation(fPrg, 'mMatrix');
+	fUniLocation[1] = gl.getUniformLocation(fPrg, 'mvpMatrix');
+	fUniLocation[2] = gl.getUniformLocation(fPrg, 'texture');
 	
 	var torusData = torus(64, 64, 0.25, 0.75);
 	var vPosition = torusData.p;
@@ -41,14 +65,6 @@ function render(){
 	attSphereVBO[2] = create_vbo(vTexCoord);
 	var sphereIbo = create_ibo(index);
 	
-	var uniLocation = [];
-	uniLocation[0] = gl.getUniformLocation(prg, 'mMatrix');
-	uniLocation[1] = gl.getUniformLocation(prg, 'mvpMatrix');
-	uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
-	uniLocation[3] = gl.getUniformLocation(prg, 'lightDirection');
-	uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
-	uniLocation[5] = gl.getUniformLocation(prg, 'texture');
-	
 	var m = new matIV();
 	var mMatrix = m.identity(m.create());
 	var vMatrix = m.identity(m.create());
@@ -57,11 +73,11 @@ function render(){
 	var mvpMatrix = m.identity(m.create());
 	var invMatrix = m.identity(m.create());
 	
-	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
-	gl.enable(gl.CULL_FACE);
 	gl.clearColor(0.0, 0.7, 0.7, 1.0);
 	gl.clearDepth(1.0);
+	gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ONE, gl.ONE);
+	gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 	
 	var count = 0;
 	var lightPosition = [1.0, 5.0, 1.0];
@@ -97,7 +113,7 @@ function render(){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
 			m.identity(this.mMatrix);
 			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
-			m.rotate(this.mMatrix, (count % 180) * Math.PI / 90, [1.0, 0.0, 0.0], this.mMatrix);
+//			m.rotate(this.mMatrix, (count % 180) * Math.PI / 90, [1.0, 0.0, 0.0], this.mMatrix);
 			m.rotate(this.mMatrix, Math.PI * 1.5, [0.0, 1.0, 0.0], this.mMatrix);
 			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
 			m.inverse(this.mMatrix, this.invMatrix);
@@ -109,11 +125,45 @@ function render(){
 		}
 	};
 	
-	var fire = {
-		move: function(){
+	var fire = function(){
+		this.position = new Vector();
+		this.mMatrix = m.identity(m.create());
+		this.mvpMatrix = m.identity(m.create());
+		this.vboList = null;
+		this.ibo = null;
+		this.indexLength = 0;
+		this.init = function(v){
+			this.position.x = v.x;
+			this.position.y = v.y;
+			this.position.z = v.z;
+			this.vboList = [
+				create_vbo(models[1].position),
+				create_vbo(models[1].texCoord)
+			];
+			this.ibo = create_ibo(models[1].index);
+			this.indexLength = models[1].vertex;
+		};
+		this.move = function(){
+			this.position.x -= 0.05;
+			if(this.position.x < -15.0){this.position.x = 15.0;} 
+			return;
+		};
+		this.draw = function(rad, v){
+			set_attribute(this.vboList, fAttLocation, fAttStride, this.ibo);
+			m.identity(this.mMatrix);
+			m.multiply(this.mMatrix, v.mMatrix, this.mMatrix);
+			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
+			m.rotate(this.mMatrix, rad, [0.0, 0.0, 1.0], this.mMatrix);
+			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
+			gl.uniformMatrix4fv(fUniLocation[0], false, this.mMatrix);
+			gl.uniformMatrix4fv(fUniLocation[1], false, this.mvpMatrix);
+			gl.uniform1i(fUniLocation[2], 0);
+			gl.drawElements(gl.TRIANGLES, this.indexLength, gl.UNSIGNED_SHORT, 0);
 			return;
 		}
 	};
+	var lFire = new fire();
+	var rFire = new fire();
 	
 	var cloud = {
 		move: function(){
@@ -122,13 +172,20 @@ function render(){
 	};
 	
 	viper.init();
+	lFire.init({x:  1.65, y: 0.1, z: -2.45});
+	rFire.init({x: -1.65, y: 0.1, z: -2.45});
 	
 	create_texture('image/test.jpg', 0);
 	
 	function animation(){
 		count++;
-		
 		var rad = (count % 360) * Math.PI / 180;
+		
+		gl.enable(gl.DEPTH_TEST);
+		gl.enable(gl.CULL_FACE);
+		gl.disable(gl.BLEND);
+		
+		gl.useProgram(prg);
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		
@@ -179,6 +236,23 @@ function render(){
 		
 		viper.move();
 		viper.draw();
+		
+		
+		
+		
+		
+//		gl.disable(gl.DEPTH_TEST);
+		gl.disable(gl.CULL_FACE);
+		gl.enable(gl.BLEND);
+		
+		gl.useProgram(fPrg);
+		
+//		lFire.move();
+		lFire.draw(rad, viper);
+		
+		rad = (359 - (count % 360)) * Math.PI / 180;
+//		rFire.move();
+		rFire.draw(rad, viper);
 		
 		gl.flush();
 		if(run){requestAnimationFrame(animation);}
