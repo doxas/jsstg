@@ -71,18 +71,39 @@ function render(){
 	run = true;
 	
 	var viper = {
+		position: new Vector(),
+		mMatrix: m.identity(m.create()),
+		mvpMatrix: m.identity(m.create()),
 		init: function(){
+			this.vboList = [
+				create_vbo(models[0].position),
+				create_vbo(models[0].normal),
+				create_vbo(models[0].texCoord)
+			];
+			this.ibo = create_ibo(models[0].index);
+			this.indexLength = models[0].vertex;
+		},
+		move: function(){
+			this.position.x -= 1.0;
+			if(this.position.x < 0.0){this.position = 10.0;} 
 			return;
 		},
+		draw: function(){
+			set_attribute(this.vboList, attLocation, attStride, this.ibo);
+			m.identity(mMatrix);
+			m.translate(mMatrix, [this.position.x, this.position.y, this.position.z], mMatrix);
+			gl.drawElements(gl.TRIANGLES, this.indexLength, gl.UNSIGNED_SHORT, 0);
+			return;
+		}
+	};
+	
+	var fire = {
 		move: function(){
 			return;
 		}
 	};
 	
 	var cloud = {
-		init: function(){
-			return;
-		},
 		move: function(){
 			return;
 		}
@@ -309,5 +330,7 @@ function Ajax(callBackFunction){
 	};
 }
 
-
+function Vector(){
+	this.x = 0; this.y = 0; this.z = 0;
+}
 
