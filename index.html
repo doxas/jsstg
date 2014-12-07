@@ -19,17 +19,17 @@
 	<script id="vs" type="x-shader/x-vertex">
 attribute vec3 position;
 attribute vec3 normal;
-attribute vec4 color;
+attribute vec2 texCoord;
 uniform   mat4 mMatrix;
 uniform   mat4 mvpMatrix;
 varying   vec3 vPosition;
 varying   vec3 vNormal;
-varying   vec4 vColor;
+varying   vec2 vTexCoord;
 
 void main(void){
 	vPosition   = (mMatrix * vec4(position, 1.0)).xyz;
 	vNormal     = normal;
-	vColor      = color;
+	vTexCoord   = vec2(texCoord.s, 1.0 - texCoord.t);
 	gl_Position = mvpMatrix * vec4(position, 1.0);
 }
 	</script>
@@ -40,9 +40,10 @@ precision mediump float;
 uniform mat4 invMatrix;
 uniform vec3 lightDirection;
 uniform vec3 eyeDirection;
+uniform sampler2D texture;
 varying vec3 vPosition;
 varying vec3 vNormal;
-varying vec4 vColor;
+varying vec2 vTexCoord;
 
 const vec3 bgColor = vec3(0.0, 0.7, 0.7);
 
@@ -61,7 +62,8 @@ void main(void){
 		shade = 0.25;
 	}
 	if(abs(edge) < 0.5){shade = 0.0;}
-	vec3 destColor = mix(vec3(vColor.rgb * shade), bgColor, fog);
+	vec3 smpColor = (texture2D(texture, vTexCoord)).rgb;
+	vec3 destColor = mix(vec3(smpColor * shade), bgColor, fog);
 	gl_FragColor = vec4(destColor, 1.0);
 }
 	</script>

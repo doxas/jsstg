@@ -11,34 +11,34 @@ function render(){
 	var attLocation = [];
 	attLocation[0] = gl.getAttribLocation(prg, 'position');
 	attLocation[1] = gl.getAttribLocation(prg, 'normal');
-	attLocation[2] = gl.getAttribLocation(prg, 'color');
+	attLocation[2] = gl.getAttribLocation(prg, 'texCoord');
 	var attStride = [];
 	attStride[0] = 3;
 	attStride[1] = 3;
-	attStride[2] = 4;
+	attStride[2] = 2;
 	
 	var torusData = torus(64, 64, 0.25, 0.75);
 	var vPosition = torusData.p;
 	var vNormal   = torusData.n;
-	var vColor    = torusData.c;
+	var vTexCoord = torusData.t;
 	var index     = torusData.i;
 	
 	var attTorusVBO = [];
 	attTorusVBO[0] = create_vbo(vPosition);
 	attTorusVBO[1] = create_vbo(vNormal);
-	attTorusVBO[2] = create_vbo(vColor);
+	attTorusVBO[2] = create_vbo(vTexCoord);
 	var torusIbo = create_ibo(index);
 	
 	var sphereData = sphere(24, 24, 1.0, [1.0, 1.0, 1.0, 1.0]);
 	vPosition = sphereData.p;
 	vNormal   = sphereData.n;
-	vColor    = sphereData.c;
+	vTexCoord = sphereData.t;
 	index     = sphereData.i;
 	
 	var attSphereVBO = [];
 	attSphereVBO[0] = create_vbo(vPosition);
 	attSphereVBO[1] = create_vbo(vNormal);
-	attSphereVBO[2] = create_vbo(vColor);
+	attSphereVBO[2] = create_vbo(vTexCoord);
 	var sphereIbo = create_ibo(index);
 	
 	var uniLocation = [];
@@ -47,6 +47,7 @@ function render(){
 	uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
 	uniLocation[3] = gl.getUniformLocation(prg, 'lightDirection');
 	uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
+	uniLocation[5] = gl.getUniformLocation(prg, 'texture');
 	
 	var m = new matIV();
 	var mMatrix = m.identity(m.create());
@@ -74,7 +75,11 @@ function render(){
 		position: new Vector(),
 		mMatrix: m.identity(m.create()),
 		mvpMatrix: m.identity(m.create()),
+		invMatrix: m.identity(m.create()),
 		init: function(){
+			this.position.x = 10.0;
+			this.position.y = -5.0;
+			this.position.z = -15.0;
 			this.vboList = [
 				create_vbo(models[0].position),
 				create_vbo(models[0].normal),
@@ -84,14 +89,21 @@ function render(){
 			this.indexLength = models[0].vertex;
 		},
 		move: function(){
-			this.position.x -= 1.0;
-			if(this.position.x < 0.0){this.position = 10.0;} 
+			this.position.x -= 0.05;
+			if(this.position.x < -15.0){this.position.x = 15.0;} 
 			return;
 		},
 		draw: function(){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
-			m.identity(mMatrix);
-			m.translate(mMatrix, [this.position.x, this.position.y, this.position.z], mMatrix);
+			m.identity(this.mMatrix);
+			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
+			m.rotate(this.mMatrix, (count % 180) * Math.PI / 90, [1.0, 0.0, 0.0], this.mMatrix);
+			m.rotate(this.mMatrix, Math.PI * 1.5, [0.0, 1.0, 0.0], this.mMatrix);
+			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
+			m.inverse(this.mMatrix, this.invMatrix);
+			gl.uniformMatrix4fv(uniLocation[0], false, this.mMatrix);
+			gl.uniformMatrix4fv(uniLocation[1], false, this.mvpMatrix);
+			gl.uniformMatrix4fv(uniLocation[2], false, this.invMatrix);
 			gl.drawElements(gl.TRIANGLES, this.indexLength, gl.UNSIGNED_SHORT, 0);
 			return;
 		}
@@ -109,7 +121,9 @@ function render(){
 		}
 	};
 	
-	animation();
+	viper.init();
+	
+	create_texture('image/test.jpg', 0);
 	
 	function animation(){
 		count++;
@@ -121,6 +135,7 @@ function render(){
 		gl.viewport(0, 0, cWidth, cHeight);
 		gl.uniform3fv(uniLocation[3], lightPosition);
 		gl.uniform3fv(uniLocation[4], eyePosition);
+		gl.uniform1i(uniLocation[5], 0);
 		
 		m.lookAt(eyePosition, centerPoint, upDirection, vMatrix);
 		m.perspective(45, cAspect, 0.1, 50.0, pMatrix);
@@ -161,6 +176,9 @@ function render(){
 		
 		
 		
+		
+		viper.move();
+		viper.draw();
 		
 		gl.flush();
 		if(run){requestAnimationFrame(animation);}
@@ -224,8 +242,13 @@ function render(){
 			gl.bindTexture(gl.TEXTURE_2D, tex);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 			gl.generateMipmap(gl.TEXTURE_2D);
-			gl.bindTexture(gl.TEXTURE_2D, null);
+//			gl.bindTexture(gl.TEXTURE_2D, null);
 			textures[number] = tex;
+			
+			// animation call
+			gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+			animation();
+			
 		};
 		img.src = source;
 	}
@@ -286,13 +309,9 @@ window.onload = function(){
 	ax.requestGet('http://jp.wgld.org/jsstg/2015f/model/' + axTarget);
 	
 	function loadResource(){
-		if(models.length === 3){
-			if(textures.length === 0){
-				pages[0].className = 'pages hide';
-				pages[1].className = 'pages view';
-				render();
-			}
-		}
+		pages[0].className = 'pages hide';
+		pages[1].className = 'pages view';
+		render();
 	}
 };
 
