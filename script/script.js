@@ -42,12 +42,9 @@ function render(){
 	fUniLocation[2] = gl.getUniformLocation(fPrg, 'texture');
 	
 	var m = new matIV();
-	var mMatrix = m.identity(m.create());
 	var vMatrix = m.identity(m.create());
 	var pMatrix = m.identity(m.create());
 	var vpMatrix = m.identity(m.create());
-	var mvpMatrix = m.identity(m.create());
-	var invMatrix = m.identity(m.create());
 	
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
