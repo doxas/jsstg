@@ -24,6 +24,7 @@ function render(){
 	uniLocation[3] = gl.getUniformLocation(prg, 'lightDirection');
 	uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
 	uniLocation[5] = gl.getUniformLocation(prg, 'texture');
+	uniLocation[6] = gl.getUniformLocation(prg, 'edges');
 	
 	vs = document.getElementById('fvs').textContent;
 	fs = document.getElementById('ffs').textContent;
@@ -63,6 +64,9 @@ function render(){
 	
 	var viper = {
 		position: new Vector(),
+		diff: new Vector(),
+		count: 0,
+		mode: 'normal',
 		mMatrix: m.identity(m.create()),
 		mvpMatrix: m.identity(m.create()),
 		invMatrix: m.identity(m.create()),
@@ -79,16 +83,27 @@ function render(){
 			this.indexLength = models[0].vertex;
 		},
 		move: function(){
-			this.position.x -= 0.05;
-			if(this.position.x < -20.0){this.position.x = 20.0;} 
+			var rad, rad2;
+			this.count++;
+			switch(this.mode){
+				case 'normal':
+					rad = this.count % 360 * Math.PI / 180;
+					rad2 = this.count % 180 * Math.PI / 90;
+					this.diff.x = this.position.x;
+					this.position.x = Math.cos(rad) * 3;
+					this.position.y = Math.sin(rad2) * 1.5;
+					this.diff.y = this.position.x;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;
+					break;
+			}
 			return;
 		},
 		draw: function(){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
 			m.identity(this.mMatrix);
 			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
-//			m.rotate(this.mMatrix, (count % 180) * Math.PI / 90, [1.0, 0.0, 0.0], this.mMatrix);
-			m.rotate(this.mMatrix, Math.PI * 1.5, [0.0, 1.0, 0.0], this.mMatrix);
+			m.rotate(this.mMatrix, this.diff.z, [0.0, 0.0, 1.0], this.mMatrix);
+			m.rotate(this.mMatrix, Math.PI, [0.0, 1.0, 0.0], this.mMatrix);
 			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
 			m.inverse(this.mMatrix, this.invMatrix);
 			gl.uniformMatrix4fv(uniLocation[0], false, this.mMatrix);
@@ -156,7 +171,7 @@ function render(){
 		};
 		this.move = function(){
 			this.position.x += this.speed;
-			if(this.position.x > 25.0){this.position.x = -25.0;} 
+			if(this.position.x > 50.0){this.position.x = -50.0;} 
 			return;
 		};
 		this.draw = function(){
@@ -184,10 +199,10 @@ function render(){
 	for(var i = 0; i < 20; i++){
 		clouds[i] = new cloud();
 		clouds[i].init({
-			x: Math.random() * 50 - 25,
+			x: Math.random() * 100 - 50,
 			y: -15 + Math.random() * 5,
 			z: -Math.random() * 50,
-			w: Math.random() * 0.1 + 0.05
+			w: Math.random() * 0.05 + 0.025
 		});
 	}
 	
@@ -197,7 +212,10 @@ function render(){
 		count++;
 		var rad = (count % 360) * Math.PI / 180;
 		
+		gl.depthMask(false);
+		gl.disable(gl.DEPTH_TEST);
 		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.FRONT);
 		gl.disable(gl.BLEND);
 		
 		gl.useProgram(prg);
@@ -208,6 +226,7 @@ function render(){
 		gl.uniform3fv(uniLocation[3], lightPosition);
 		gl.uniform3fv(uniLocation[4], eyePosition);
 		gl.uniform1i(uniLocation[5], 0);
+		gl.uniform1i(uniLocation[6], true);
 		
 		m.lookAt(eyePosition, centerPoint, upDirection, vMatrix);
 		m.perspective(45, cAspect, 0.1, 50.0, pMatrix);
@@ -218,6 +237,16 @@ function render(){
 		
 		for(var i = 0; i < 20; i++){
 			clouds[i].move();
+			clouds[i].draw();
+		}
+		
+		// instance
+		gl.depthMask(true);
+		gl.enable(gl.DEPTH_TEST);
+		gl.cullFace(gl.BACK);
+		gl.uniform1i(uniLocation[6], false);
+		viper.draw();
+		for(var i = 0; i < 20; i++){
 			clouds[i].draw();
 		}
 		

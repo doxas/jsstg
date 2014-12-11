@@ -22,15 +22,18 @@ attribute vec3 normal;
 attribute vec2 texCoord;
 uniform   mat4 mMatrix;
 uniform   mat4 mvpMatrix;
+uniform   bool edges;
 varying   vec3 vPosition;
 varying   vec3 vNormal;
 varying   vec2 vTexCoord;
 
 void main(void){
-	vPosition   = (mMatrix * vec4(position, 1.0)).xyz;
+	vec3 p = position;
+	vPosition   = (mMatrix * vec4(p, 1.0)).xyz;
 	vNormal     = normal;
 	vTexCoord   = vec2(texCoord.s, 1.0 - texCoord.t);
-	gl_Position = mvpMatrix * vec4(position, 1.0);
+	if(edges){p += normal * 0.05;}
+	gl_Position = mvpMatrix * vec4(p, 1.0);
 }
 	</script>
 	
@@ -41,6 +44,7 @@ uniform mat4 invMatrix;
 uniform vec3 lightDirection;
 uniform vec3 eyeDirection;
 uniform sampler2D texture;
+uniform bool edges;
 varying vec3 vPosition;
 varying vec3 vNormal;
 varying vec2 vTexCoord;
@@ -48,23 +52,24 @@ varying vec2 vTexCoord;
 const vec3 bgColor = vec3(0.0, 0.7, 0.7);
 
 void main(void){
-	vec3  invLight = normalize(invMatrix * vec4(lightDirection, 1.0)).xyz;
-	vec3  invEye   = normalize(invMatrix * vec4(eyeDirection, 1.0)).xyz;
-	float diffuse  = clamp(dot(vNormal, invLight), 0.0, 1.0);
-	float edge     = clamp(dot(vNormal, invEye), 0.0, 1.0);
-	float fog      = length(eyeDirection.z - vPosition.z) / 50.0;
-	float shade = 0.0;
-	if(diffuse > 0.5){
-		shade = 1.0;
-	}else if(diffuse > 0.25){
-		shade = 0.5;
-	}else{
-		shade = 0.25;
+	vec3  destColor = vec3(0.0);
+	float fog       = length(eyeDirection.z - vPosition.z) / 50.0;
+	if(!edges){
+		vec3  invLight = normalize(invMatrix * vec4(lightDirection, 1.0)).xyz;
+		vec3  invEye   = normalize(invMatrix * vec4(eyeDirection, 1.0)).xyz;
+		float diffuse  = clamp(dot(vNormal, invLight), 0.0, 1.0);
+		float shade = 0.0;
+		if(diffuse > 0.7){
+			shade = 1.0;
+		}else if(diffuse > 0.35){
+			shade = 0.5;
+		}else{
+			shade = 0.25;
+		}
+		vec3 smpColor = (texture2D(texture, vTexCoord)).rgb;
+		destColor = smpColor * shade;
 	}
-	if(abs(edge) < 0.25){shade = 0.0;}
-	vec3 smpColor = (texture2D(texture, vTexCoord)).rgb;
-	vec3 destColor = mix(vec3(smpColor * shade), bgColor, fog);
-	gl_FragColor = vec4(destColor, 1.0);
+	gl_FragColor = vec4(mix(destColor, bgColor, fog), 1.0);
 }
 	</script>
 	
