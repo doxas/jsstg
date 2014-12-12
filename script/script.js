@@ -56,7 +56,7 @@ function render(){
 	
 	var count = 0;
 	var lightPosition = [5.0, 10.0, 5.0];
-	var eyePosition = [0.0, 5.0, 15.0];
+	var eyePosition = [0.0, 5.0, 25.0];
 	var centerPoint = [0.0, 0.0, 0.0];
 	var upDirection = [0.0, 1.0, 0.0];
 	
@@ -69,6 +69,7 @@ function render(){
 		mode: 'normal',
 		moving: false,
 		param: 0,
+		paramf: 0.0,
 		mMatrix: m.identity(m.create()),
 		sMatrix: m.identity(m.create()),
 		mvpMatrix: m.identity(m.create()),
@@ -104,6 +105,11 @@ function render(){
 					this.param++;
 					rad = this.count % 360 * Math.PI / 180;
 					rad2 = this.count % 180 * Math.PI / 90;
+					this.diff.x = this.position.x;
+					this.position.x = Math.cos(rad) * 3;
+					this.position.y = Math.sin(rad2) * 1.5;
+					this.diff.y = this.position.x;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;
 					var e = backincubic(this.param, 0, 1, 75);
 					this.position.z -= e;
 					if(this.position.z < -75){
@@ -118,7 +124,12 @@ function render(){
 					this.param++;
 					rad = this.count % 360 * Math.PI / 180;
 					rad2 = this.count % 180 * Math.PI / 90;
-					var e = backincubic(this.param, 0, 1, 75);
+					this.diff.x = this.position.x;
+					this.position.x = Math.cos(rad) * 3;
+					this.position.y = Math.sin(rad2) * 1.5;
+					this.diff.y = this.position.x;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;
+					var e = outquintic(this.param, 0, 1, 75);
 					this.position.z -= e;
 					if(this.position.z <= 0){
 						this.param = 0;
@@ -127,7 +138,42 @@ function render(){
 					}
 					break;
 				case 'turn':
-					
+					// param = 0 start, param = 50 end;
+//					this.count++;
+					this.param++;
+					rad = this.count % 360 * Math.PI / 180;
+					rad2 = this.count % 180 * Math.PI / 90;
+					var e = backincubic(this.param, 0, 1, 50);
+//					this.diff.x = this.position.x;
+//					this.position.x = Math.cos(rad) * 3;
+//					this.position.y = Math.sin(rad2) * 1.5;
+//					this.diff.y = this.position.x;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10 + e * 2;
+					this.position.x -= e;
+					if(this.position.x < -50 + this.paramf){
+						this.position.x = 50;
+						this.param = 0;
+						this.mode = 'return';
+					}
+					break;
+				case 'return':
+					// param = 0 start, param = 75 end;
+//					this.count++;
+					this.param++;
+					rad = this.count % 360 * Math.PI / 180;
+					rad2 = this.count % 180 * Math.PI / 90;
+					var e = outbackcubic(this.param, 0, 1, 50);
+//					this.diff.x = this.position.x;
+//					this.position.x = Math.cos(rad) * 3;
+//					this.position.y = Math.sin(rad2) * 1.5;
+//					this.diff.y = this.position.x;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;// + (1.0 - e) * 2;
+					this.position.x -= e;
+					if(this.position.x <= 0 + this.paramf){
+						this.param = 0;
+						this.moving = false;
+						this.mode = 'normal';
+					}
 					break;
 			}
 			return;
@@ -141,6 +187,14 @@ function render(){
 						viper.moving = true;
 						viper.param = 0;
 						viper.mode = 'dash';
+					}
+					break;
+				case 2:
+					if(!viper.moving){
+						viper.paramf = viper.position.x;
+						viper.moving = true;
+						viper.param = 0;
+						viper.mode = 'turn';
 					}
 					break;
 			}
@@ -167,6 +221,7 @@ function render(){
 		}
 	};
 	buttons[1].addEventListener('click', viper.action, true);
+	buttons[2].addEventListener('click', viper.action, true);
 	
 	function fire(){
 		this.position = new Vector();
@@ -529,7 +584,19 @@ function Vector(){
 	this.x = 0; this.y = 0; this.z = 0;
 }
 
-function backincubic(t, s, e, d) {
+function backincubic(t, s, e, d){
 	var ts = (t /= d) * t;
 	return s + e * (2 * ts * ts + -ts);
+}
+
+function outquintic(t, s, e, d){
+	var ts= (t /= d) * t;
+	var tc= ts * t;
+	return s + e * (tc * ts + -5 * ts * ts + 10 * tc + -10 * ts + 5 * t);
+}
+
+function outbackcubic(t, s, e, d){
+	var ts = (t /= d) * t;
+	var tc = ts * t;
+	return s + e * (4 * tc + -9 * ts + 6 * t);
 }
