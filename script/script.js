@@ -67,6 +67,8 @@ function render(){
 		diff: new Vector(),
 		count: 0,
 		mode: 'normal',
+		moving: false,
+		param: 0,
 		mMatrix: m.identity(m.create()),
 		sMatrix: m.identity(m.create()),
 		mvpMatrix: m.identity(m.create()),
@@ -85,9 +87,9 @@ function render(){
 		},
 		move: function(){
 			var rad, rad2;
-			this.count++;
 			switch(this.mode){
 				case 'normal':
+					this.count++;
 					rad = this.count % 360 * Math.PI / 180;
 					rad2 = this.count % 180 * Math.PI / 90;
 					this.diff.x = this.position.x;
@@ -96,8 +98,52 @@ function render(){
 					this.diff.y = this.position.x;
 					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;
 					break;
+				case 'dash':
+					// param = 0 start, param = 75 end;
+					this.count++;
+					this.param++;
+					rad = this.count % 360 * Math.PI / 180;
+					rad2 = this.count % 180 * Math.PI / 90;
+					var e = backincubic(this.param, 0, 1, 75);
+					this.position.z -= e;
+					if(this.position.z < -75){
+						this.position.z = 75;
+						this.param = 0;
+						this.mode = 'over';
+					}
+					break;
+				case 'over':
+					// param = 0 start, param = 75 end;
+					this.count++;
+					this.param++;
+					rad = this.count % 360 * Math.PI / 180;
+					rad2 = this.count % 180 * Math.PI / 90;
+					var e = backincubic(this.param, 0, 1, 75);
+					this.position.z -= e;
+					if(this.position.z <= 0){
+						this.param = 0;
+						this.moving = false;
+						this.mode = 'normal';
+					}
+					break;
+				case 'turn':
+					
+					break;
 			}
 			return;
+		},
+		action: function(eve){
+			if(!eve){return;}
+			var e = parseInt(eve.currentTarget.id.replace(/button/, ''));
+			switch(e){
+				case 1:
+					if(!viper.moving){
+						viper.moving = true;
+						viper.param = 0;
+						viper.mode = 'dash';
+					}
+					break;
+			}
 		},
 		draw: function(scales){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
@@ -120,6 +166,7 @@ function render(){
 			return;
 		}
 	};
+	buttons[1].addEventListener('click', viper.action, true);
 	
 	function fire(){
 		this.position = new Vector();
@@ -358,7 +405,6 @@ function render(){
 			gl.bindTexture(gl.TEXTURE_2D, tex);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 			gl.generateMipmap(gl.TEXTURE_2D);
-//			gl.bindTexture(gl.TEXTURE_2D, null);
 			textures[number] = tex;
 			
 			// animation call
@@ -394,6 +440,11 @@ window.onload = function(){
 			for(j = 0; j < pages.length; j++){
 				var s = k === j ? 'view' : 'hide';
 				pages[j].className = 'pages ' + s;
+			}
+			switch(i){
+				case 1:
+					
+					break;
 			}
 		}, true);
 	}
@@ -478,3 +529,7 @@ function Vector(){
 	this.x = 0; this.y = 0; this.z = 0;
 }
 
+function backincubic(t, s, e, d) {
+	var ts = (t /= d) * t;
+	return s + e * (2 * ts * ts + -ts);
+}
