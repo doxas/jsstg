@@ -109,10 +109,18 @@ h3 {
 }
 
 #buttons li {
+	color: crimson;
+	text-decoration: none;
 	margin: 0px 3px;
 	padding: 0px 10px;
 	display: block;
 	float: left;
+	cursor: pointer;
+}
+
+#buttons li:hover {
+	color: white;
+	text-decoration: underline;
 }
 
 #loading {

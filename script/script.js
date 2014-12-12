@@ -378,7 +378,7 @@ window.onload = function(){
 	c = document.getElementById('canvas');
 	c.width = cWidth;
 	c.height = cHeight;
-	pages = []; models = []; textures = [];
+	pages = []; buttons = []; models = []; textures = [];
 	e = document.getElementById('content');
 	for(i = 0, l = e.childNodes.length; i < l; i++){
 		if(e.childNodes[i].className && e.childNodes[i].className.match(/pages/)){
@@ -386,6 +386,16 @@ window.onload = function(){
 			e.childNodes[i].style.width = Math.max(cWidth - 100, 100) + 'px';
 			e.childNodes[i].style.height = Math.max(cHeight - 300, 100) + 'px';
 		}
+	}
+	for(i = 1; i < pages.length; i++){
+		buttons[i] = document.getElementById('button' + i);
+		buttons[i].addEventListener('click', function(eve){
+			var k = parseInt(eve.currentTarget.id.replace(/button/, ''));
+			for(j = 0; j < pages.length; j++){
+				var s = k === j ? 'view' : 'hide';
+				pages[j].className = 'pages ' + s;
+			}
+		}, true);
 	}
 	
 	window.addEventListener('keydown', function(eve){run = (eve.keyCode !== 27);}, true);
