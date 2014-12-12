@@ -55,8 +55,8 @@ function render(){
 	gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 	
 	var count = 0;
-	var lightPosition = [1.0, 5.0, 1.0];
-	var eyePosition = [0.0, 0.0, 5.0];
+	var lightPosition = [5.0, 10.0, 5.0];
+	var eyePosition = [0.0, 5.0, 15.0];
 	var centerPoint = [0.0, 0.0, 0.0];
 	var upDirection = [0.0, 1.0, 0.0];
 	
@@ -68,12 +68,13 @@ function render(){
 		count: 0,
 		mode: 'normal',
 		mMatrix: m.identity(m.create()),
+		sMatrix: m.identity(m.create()),
 		mvpMatrix: m.identity(m.create()),
 		invMatrix: m.identity(m.create()),
 		init: function(){
-			this.position.x = 20.0;
+			this.position.x = 0.0;
 			this.position.y = 0.0;
-			this.position.z = -20.0;
+			this.position.z = 0.0;
 			this.vboList = [
 				create_vbo(models[0].position),
 				create_vbo(models[0].normal),
@@ -98,14 +99,20 @@ function render(){
 			}
 			return;
 		},
-		draw: function(){
+		draw: function(scales){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
 			m.identity(this.mMatrix);
 			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
 			m.rotate(this.mMatrix, this.diff.z, [0.0, 0.0, 1.0], this.mMatrix);
 			m.rotate(this.mMatrix, Math.PI, [0.0, 1.0, 0.0], this.mMatrix);
-			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
-			m.inverse(this.mMatrix, this.invMatrix);
+			if(scales){
+				m.scale(this.mMatrix, [1.05, 1.05, 1.05], this.sMatrix);
+				m.multiply(vpMatrix, this.sMatrix, this.mvpMatrix);
+				m.inverse(this.mMatrix, this.invMatrix);
+			}else{
+				m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
+				m.inverse(this.mMatrix, this.invMatrix);
+			}
 			gl.uniformMatrix4fv(uniLocation[0], false, this.mMatrix);
 			gl.uniformMatrix4fv(uniLocation[1], false, this.mvpMatrix);
 			gl.uniformMatrix4fv(uniLocation[2], false, this.invMatrix);
@@ -116,6 +123,7 @@ function render(){
 	
 	function fire(){
 		this.position = new Vector();
+		this.count = 0;
 		this.mMatrix = m.identity(m.create());
 		this.mvpMatrix = m.identity(m.create());
 		this.vboList = null;
@@ -132,7 +140,14 @@ function render(){
 			this.ibo = create_ibo(models[1].index);
 			this.indexLength = models[1].vertex;
 		};
-		this.draw = function(rad, v){
+		this.draw = function(left, v){
+			var rad;
+			this.count += 5;
+			if(left){
+				rad = this.count % 360 * Math.PI / 180;
+			}else{
+				rad = (359 - this.count % 360) * Math.PI / 180;
+			}
 			set_attribute(this.vboList, fAttLocation, fAttStride, this.ibo);
 			m.identity(this.mMatrix);
 			m.multiply(this.mMatrix, v.mMatrix, this.mMatrix);
@@ -150,6 +165,7 @@ function render(){
 	function cloud(){
 		this.position = new Vector();
 		this.mMatrix = m.identity(m.create());
+		this.sMatrix = m.identity(m.create());
 		this.mvpMatrix = m.identity(m.create());
 		this.invMatrix = m.identity(m.create());
 		this.vboList = null;
@@ -170,16 +186,22 @@ function render(){
 			this.indexLength = models[2].vertex;
 		};
 		this.move = function(){
-			this.position.x += this.speed;
-			if(this.position.x > 50.0){this.position.x = -50.0;} 
+			this.position.z += this.speed;
+			if(this.position.z > 75.0){this.position.z = -75.0;} 
 			return;
 		};
-		this.draw = function(){
+		this.draw = function(scales){
 			set_attribute(this.vboList, attLocation, attStride, this.ibo);
 			m.identity(this.mMatrix);
 			m.translate(this.mMatrix, [this.position.x, this.position.y, this.position.z], this.mMatrix);
-			m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
-			m.inverse(this.mMatrix, this.invMatrix);
+			if(scales){
+				m.scale(this.mMatrix, [1.05, 1.05, 1.05], this.sMatrix);
+				m.multiply(vpMatrix, this.sMatrix, this.mvpMatrix);
+				m.inverse(this.mMatrix, this.invMatrix);
+			}else{
+				m.multiply(vpMatrix, this.mMatrix, this.mvpMatrix);
+				m.inverse(this.mMatrix, this.invMatrix);
+			}
 			gl.uniformMatrix4fv(uniLocation[0], false, this.mMatrix);
 			gl.uniformMatrix4fv(uniLocation[1], false, this.mvpMatrix);
 			gl.uniformMatrix4fv(uniLocation[2], false, this.invMatrix);
@@ -196,13 +218,14 @@ function render(){
 	rFire.init({x: -1.65, y: 0.1, z: -2.45});
 	
 	var clouds = [];
-	for(var i = 0; i < 20; i++){
+	var cloudCount = 30;
+	for(var i = 0; i < cloudCount; i++){
 		clouds[i] = new cloud();
 		clouds[i].init({
-			x: Math.random() * 100 - 50,
-			y: -15 + Math.random() * 5,
-			z: -Math.random() * 50,
-			w: Math.random() * 0.05 + 0.025
+			x: Math.random() * 80 - 40,
+			y: -25 + Math.random() * 10,
+			z: 10 - Math.random() * 60,
+			w: Math.random() * 0.5 + 0.25
 		});
 	}
 	
@@ -212,12 +235,6 @@ function render(){
 		count++;
 		var rad = (count % 360) * Math.PI / 180;
 		
-		gl.depthMask(false);
-		gl.disable(gl.DEPTH_TEST);
-		gl.enable(gl.CULL_FACE);
-		gl.cullFace(gl.FRONT);
-		gl.disable(gl.BLEND);
-		
 		gl.useProgram(prg);
 		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -226,38 +243,58 @@ function render(){
 		gl.uniform3fv(uniLocation[3], lightPosition);
 		gl.uniform3fv(uniLocation[4], eyePosition);
 		gl.uniform1i(uniLocation[5], 0);
-		gl.uniform1i(uniLocation[6], true);
 		
 		m.lookAt(eyePosition, centerPoint, upDirection, vMatrix);
-		m.perspective(45, cAspect, 0.1, 50.0, pMatrix);
+		m.perspective(45, cAspect, 1.0, 75.0, pMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
 		
-		viper.move();
-		viper.draw();
+		// cloud edge
+		gl.depthMask(false);
+		gl.disable(gl.DEPTH_TEST);
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.FRONT);
+		gl.disable(gl.BLEND);
+		gl.uniform1i(uniLocation[6], true);
 		
-		for(var i = 0; i < 20; i++){
+		for(var i = 0; i < cloudCount; i++){
 			clouds[i].move();
+			clouds[i].draw(true);
+		}
+		
+		// cloud body
+		gl.depthMask(true);
+		gl.enable(gl.DEPTH_TEST);
+		gl.cullFace(gl.BACK);
+		gl.uniform1i(uniLocation[6], false);
+		for(var i = 0; i < cloudCount; i++){
 			clouds[i].draw();
 		}
 		
-		// instance
+		// viper edge
+		gl.depthMask(false);
+		gl.disable(gl.DEPTH_TEST);
+		gl.cullFace(gl.FRONT);
+		gl.disable(gl.BLEND);
+		gl.uniform1i(uniLocation[6], true);
+		
+		viper.move();
+		viper.draw(true);
+		
+		// viper body
 		gl.depthMask(true);
 		gl.enable(gl.DEPTH_TEST);
 		gl.cullFace(gl.BACK);
 		gl.uniform1i(uniLocation[6], false);
 		viper.draw();
-		for(var i = 0; i < 20; i++){
-			clouds[i].draw();
-		}
 		
+		// fire draw
 		gl.disable(gl.CULL_FACE);
 		gl.enable(gl.BLEND);
 		
 		gl.useProgram(fPrg);
 		
-		lFire.draw(rad, viper);
-		rad = (359 - (count % 360)) * Math.PI / 180;
-		rFire.draw(rad, viper);
+		lFire.draw(true, viper);
+		rFire.draw(false, viper);
 		
 		gl.flush();
 		if(run){requestAnimationFrame(animation);}

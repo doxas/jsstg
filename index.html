@@ -32,7 +32,6 @@ void main(void){
 	vPosition   = (mMatrix * vec4(p, 1.0)).xyz;
 	vNormal     = normal;
 	vTexCoord   = vec2(texCoord.s, 1.0 - texCoord.t);
-	if(edges){p += normal * 0.05;}
 	gl_Position = mvpMatrix * vec4(p, 1.0);
 }
 	</script>
@@ -53,7 +52,7 @@ const vec3 bgColor = vec3(0.0, 0.7, 0.7);
 
 void main(void){
 	vec3  destColor = vec3(0.0);
-	float fog       = length(eyeDirection.z - vPosition.z) / 50.0;
+	float fog       = length(eyeDirection.z - vPosition.z) / 75.0;
 	if(!edges){
 		vec3  invLight = normalize(invMatrix * vec4(lightDirection, 1.0)).xyz;
 		vec3  invEye   = normalize(invMatrix * vec4(eyeDirection, 1.0)).xyz;
