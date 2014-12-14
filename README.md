@@ -15,6 +15,7 @@ jsstg 用の作品公開ページその他。
 
 二度目の jsstg を開催します。皆様ふるってご参加ください。
 
+[jsstg 2015](http://jp.wgld.org/jsstg/2015f)
 
 ## 募集要項
 

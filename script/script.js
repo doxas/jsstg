@@ -77,7 +77,8 @@ function render(){
 		init: function(){
 			this.position.x = 0.0;
 			this.position.y = 0.0;
-			this.position.z = 0.0;
+			this.position.z = 75.0;
+			this.mode = 'over';
 			this.vboList = [
 				create_vbo(models[0].position),
 				create_vbo(models[0].normal),
