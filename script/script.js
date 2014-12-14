@@ -139,40 +139,32 @@ function render(){
 					break;
 				case 'turn':
 					// param = 0 start, param = 50 end;
-//					this.count++;
 					this.param++;
 					rad = this.count % 360 * Math.PI / 180;
 					rad2 = this.count % 180 * Math.PI / 90;
-					var e = backincubic(this.param, 0, 1, 50);
-//					this.diff.x = this.position.x;
-//					this.position.x = Math.cos(rad) * 3;
-//					this.position.y = Math.sin(rad2) * 1.5;
-//					this.diff.y = this.position.x;
-					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10 + e * 2;
+					var e = backincubic(this.param, 0, 1, 50) / 2;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10 + e;
 					this.position.x -= e;
+					this.position.z -= e;
 					if(this.position.x < -50 + this.paramf){
-						this.position.x = 50;
+						this.position.z = 75;
 						this.param = 0;
-						this.mode = 'return';
+						this.mode = 'over';
 					}
 					break;
 				case 'return':
-					// param = 0 start, param = 75 end;
-//					this.count++;
+					// param = 0 start, param = 50 end;
 					this.param++;
 					rad = this.count % 360 * Math.PI / 180;
 					rad2 = this.count % 180 * Math.PI / 90;
-					var e = outbackcubic(this.param, 0, 1, 50);
-//					this.diff.x = this.position.x;
-//					this.position.x = Math.cos(rad) * 3;
-//					this.position.y = Math.sin(rad2) * 1.5;
-//					this.diff.y = this.position.x;
-					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10;// + (1.0 - e) * 2;
-					this.position.x -= e;
-					if(this.position.x <= 0 + this.paramf){
+					var e = backincubic(this.param, 0, 1, 50) / 2;
+					this.diff.z = Math.PI * 2 - (this.diff.y - this.diff.x) * 10 - e;
+					this.position.x += e;
+					this.position.z -= e;
+					if(this.position.x > 50 + this.paramf){
+						this.position.z = 75;
 						this.param = 0;
-						this.moving = false;
-						this.mode = 'normal';
+						this.mode = 'over';
 					}
 					break;
 			}
@@ -195,6 +187,14 @@ function render(){
 						viper.moving = true;
 						viper.param = 0;
 						viper.mode = 'turn';
+					}
+					break;
+				case 3:
+					if(!viper.moving){
+						viper.paramf = viper.position.x;
+						viper.moving = true;
+						viper.param = 0;
+						viper.mode = 'return';
 					}
 					break;
 			}
@@ -222,6 +222,7 @@ function render(){
 	};
 	buttons[1].addEventListener('click', viper.action, true);
 	buttons[2].addEventListener('click', viper.action, true);
+	buttons[3].addEventListener('click', viper.action, true);
 	
 	function fire(){
 		this.position = new Vector();
@@ -244,7 +245,7 @@ function render(){
 		};
 		this.draw = function(left, v){
 			var rad;
-			this.count += 5;
+			this.count += viper.mode === 'normal' ? 5 : 15;
 			if(left){
 				rad = this.count % 360 * Math.PI / 180;
 			}else{
@@ -320,7 +321,7 @@ function render(){
 	rFire.init({x: -1.65, y: 0.1, z: -2.45});
 	
 	var clouds = [];
-	var cloudCount = 30;
+	var cloudCount = 15;
 	for(var i = 0; i < cloudCount; i++){
 		clouds[i] = new cloud();
 		clouds[i].init({
