@@ -543,7 +543,7 @@ window.onload = function(){
 	
 	function loadResource(){
 		pages[0].className = 'pages hide';
-		pages[1].className = 'pages view';
+		pages[2].className = 'pages view';
 		render();
 	}
 };
